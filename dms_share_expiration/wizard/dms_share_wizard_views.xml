@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Share Link Wizard Form -->
+    <record id="view_dms_share_link_wizard_form" model="ir.ui.view">
+        <field name="name">dms.share.link.wizard.form</field>
+        <field name="model">dms.share.link.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Create Share Link">
+                <group>
+                    <field name="file_id" readonly="1"/>
+                    <field name="access_type"/>
+                    <field name="permission" invisible="not access_type" required="access_type"/>
+                    <field name="expiration_date"/>
+                    <field name="recipient_email" placeholder="e.g., john@example.com"/>
+                </group>
+                <group invisible="not share_link">
+                    <separator string="Generated Link"/>
+                    <field name="share_url" widget="CopyClipboardChar" readonly="1"/>
+                </group>
+                <footer>
+                    <button string="Generate Link" name="action_create_link" type="object" class="btn-primary" invisible="share_link"/>
+                    <button string="Close" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <!-- Share Link List View -->
+    <record id="view_dms_share_link_list" model="ir.ui.view">
+        <field name="name">dms.share.link.list</field>
+        <field name="model">dms.share.link</field>
+        <field name="arch" type="xml">
+            <list string="Share Links" create="0">
+                <field name="file_id"/>
+                <field name="access_type"/>
+                <field name="permission"/>
+                <field name="recipient_email"/>
+                <field name="expiration_date"/>
+                <field name="is_expired" decoration-danger="is_expired"/>
+                <field name="created_by_id"/>
+                <field name="create_date"/>
+                <field name="share_url" widget="CopyClipboardChar"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Share Link Form View -->
+    <record id="view_dms_share_link_form" model="ir.ui.view">
+        <field name="name">dms.share.link.form</field>
+        <field name="model">dms.share.link</field>
+        <field name="arch" type="xml">
+            <form string="Share Link">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="file_id"/>
+                            <field name="access_type"/>
+                            <field name="permission" invisible="not access_type" required="access_type"/>
+                            <field name="recipient_email"/>
+                            <field name="expiration_date"/>
+                        </group>
+                        <group>
+                            <field name="access_token"/>
+                            <field name="is_expired"/>
+                            <field name="created_by_id"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="share_url" widget="CopyClipboardChar"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Share Link Search View -->
+    <record id="view_dms_share_link_search" model="ir.ui.view">
+        <field name="name">dms.share.link.search</field>
+        <field name="model">dms.share.link</field>
+        <field name="arch" type="xml">
+            <search string="Search Share Links">
+                <field name="file_id"/>
+                <field name="access_type"/>
+                <field name="permission"/>
+                <field name="recipient_email"/>
+                <group>
+                    <filter string="Access Type" name="group_by_access_type" domain="[]" context="{'group_by':'access_type'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+</odoo>

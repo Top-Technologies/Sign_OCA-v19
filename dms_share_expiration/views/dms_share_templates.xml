@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <!-- ============================================================ -->
+    <!--  Public File Replace – Upload Form                           -->
+    <!-- ============================================================ -->
+    <template id="file_replace_form" name="DMS Share – Replace File">
+        <t t-call="web.login_layout">
+            <div class="container py-5" style="max-width: 520px;">
+                <div class="card shadow-sm">
+                    <div class="card-body p-4">
+                        <h4 class="card-title mb-1">Replace File</h4>
+                        <p class="text-muted mb-4">
+                            You are replacing:
+                            <strong t-esc="file.name"/>
+                        </p>
+                        <div t-if="error" class="alert alert-danger" role="alert">
+                            <t t-esc="error"/>
+                        </div>
+                        <form method="POST"
+                              enctype="multipart/form-data"
+                              t-attf-action="/dms/share/replace/#{token}">
+                            <input type="hidden" name="csrf_token"
+                                   t-att-value="request.csrf_token()"/>
+                            <div class="mb-3">
+                                <label for="replace_file" class="form-label">
+                                    Choose a new file
+                                </label>
+                                <input type="file" class="form-control"
+                                       id="replace_file" name="replace_file"
+                                       required="required"/>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">
+                                Upload &amp; Replace
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <!-- ============================================================ -->
+    <!--  Public File Replace – Success Page                          -->
+    <!-- ============================================================ -->
+    <template id="file_replace_success" name="DMS Share – Replace Success">
+        <t t-call="web.login_layout">
+            <div class="container py-5 text-center" style="max-width: 520px;">
+                <div class="card shadow-sm">
+                    <div class="card-body p-4">
+                        <div class="mb-3">
+                            <i class="fa fa-check-circle text-success"
+                               style="font-size: 3rem;"/>
+                        </div>
+                        <h4 class="card-title">File Replaced Successfully</h4>
+                        <p class="text-muted">
+                            <strong t-esc="file.name"/> has been updated.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+
+</odoo>
