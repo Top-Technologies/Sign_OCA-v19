@@ -110,13 +110,28 @@ class SignOcaRequest(models.Model):
     @api.depends(
         "signer_ids",
         "signer_ids.is_allow_signature",
+        "signatory_data",
     )
     @api.depends_context("uid")
     def _compute_to_sign(self):
         for record in self:
-            record.to_sign = (
-                record.signer_id.is_allow_signature if record.signer_id else False
+            record.to_sign = bool(
+                record.signer_id
+                and record.signer_id.is_allow_signature
+                and record._has_role_items(record.signer_id.role_id.id)
             )
+
+    def _get_signatory_data_map(self):
+        self.ensure_one()
+        return self.signatory_data if isinstance(self.signatory_data, dict) else {}
+
+    def _has_role_items(self, role_id):
+        self.ensure_one()
+        data = self._get_signatory_data_map()
+        return any(
+            isinstance(item, dict) and item.get("role_id") == role_id
+            for item in data.values()
+        )
 
     def sign(self):
         self.ensure_one()
@@ -248,6 +263,12 @@ class SignOcaRequest(models.Model):
         self.ensure_one()
         if self.state != "1_draft":
             return
+        if not self._get_signatory_data_map():
+            raise ValidationError(
+                self.env._(
+                    "Please configure at least one sign field before sending this request."
+                )
+            )
         self._set_action_log("validate")
         self.state = "0_sent"
         for signer in self.signer_ids:
@@ -524,9 +545,27 @@ class SignOcaRequestSigner(models.Model):
             )
         if self.request_id.state != "0_sent":
             raise ValidationError(self.env._("Request cannot be signed"))
+        signatory_data = self.request_id._get_signatory_data_map()
+        if not signatory_data:
+            raise ValidationError(
+                self.env._(
+                    "This request has no sign fields configured. Please ask the sender to configure fields first."
+                )
+            )
+        role_items = {
+            key: item
+            for key, item in signatory_data.items()
+            if isinstance(item, dict) and item.get("role_id") == self.role_id.id
+        }
+        if not role_items:
+            raise ValidationError(
+                self.env._(
+                    "No sign fields are assigned to your role for this request."
+                )
+            )
+        items = items if isinstance(items, dict) else {}
         self.signed_on = fields.Datetime.now()
         # current_hash = self.request_id.current_hash
-        signatory_data = self.request_id.signatory_data
 
         input_data = BytesIO(b64decode(self.request_id.data))
         reader = PdfFileReader(input_data)
@@ -535,16 +574,19 @@ class SignOcaRequestSigner(models.Model):
         for page_number in range(1, reader.numPages + 1):
             pages[page_number] = reader.getPage(page_number - 1)
 
-        for key in signatory_data:
-            if signatory_data[key]["role_id"] == self.role_id.id:
-                signatory_data[key] = items[key]
-                self._check_signable(items[key])
-                item = items[key]
-                page = pages[item["page"]]
-                new_page = self._get_pdf_page(item, page.mediaBox)
-                if new_page:
-                    page.mergePage(new_page)
-                pages[item["page"]] = page
+        for key, role_item in role_items.items():
+            item_values = items.get(key)
+            if not isinstance(item_values, dict):
+                raise ValidationError(
+                    self.env._("Missing data for field %s") % role_item.get("name")
+                )
+            signatory_data[key] = item_values
+            self._check_signable(item_values)
+            page = pages[item_values["page"]]
+            new_page = self._get_pdf_page(item_values, page.mediaBox)
+            if new_page:
+                page.mergePage(new_page)
+            pages[item_values["page"]] = page
         for page_number in pages:
             output.addPage(pages[page_number])
         output_stream = BytesIO()
