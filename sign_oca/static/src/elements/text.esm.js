@@ -16,6 +16,9 @@ const textSignOca = {
                 role_id: parent.info.role_id,
             })
         )[0];
+        if (item.value) {
+            input.value = item.value;
+        }
         signatureItem[0].addEventListener("focus_signature", () => {
             input.focus();
         });

@@ -16,6 +16,7 @@
                 <group>
                     <field name="template_id" invisible="1" />
                     <field name="filename" placeholder="Template name" />
+                    <field name="document_sequence" />
                     <field name="dms_directory_id" />
                     <field name="sign_now" invisible="1" />
                     <field name="message" invisible="sign_now" />

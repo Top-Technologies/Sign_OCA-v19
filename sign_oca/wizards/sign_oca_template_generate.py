@@ -28,6 +28,10 @@ class SignOcaTemplateGenerate(models.TransientModel):
             return []
         return [(0, 0, {"role_id": role.id}) for role in template.item_ids.role_id]
 
+    def _default_document_sequence(self):
+        return self.env["ir.sequence"].next_by_code("sign.oca.hr.sequence") or ""
+
+
     template_id = fields.Many2one("sign.oca.template")
     filename = fields.Char(default=_default_filename)
     dms_directory_id = fields.Many2one("dms.directory", default=_default_dms_directory)
@@ -38,14 +42,24 @@ class SignOcaTemplateGenerate(models.TransientModel):
     )
     sign_now = fields.Boolean()
     message = fields.Html()
+    document_sequence = fields.Char(default=_default_document_sequence, string="Document Sequence")
 
     def _generate_vals(self):
+        signatory_data = self.template_id._get_signatory_data()
+        
+        # Inject document sequence if field is found
+        if self.document_sequence:
+            for key, item in signatory_data.items():
+                if item.get("name") == "Document Sequence":
+                    item["value"] = self.document_sequence
+                    # item["required"] = False # Do not change required status, it should just have a value.
+
         return {
             "name": self.filename or self.template_id.name,
             "filename": self.filename or self.template_id.name,
             "template_id": self.template_id.id,
             "dms_directory_id": self.dms_directory_id.id if self.dms_directory_id else self.template_id.dms_directory_id.id,
-            "signatory_data": self.template_id._get_signatory_data(),
+            "signatory_data": signatory_data,
             "data": self.template_id.data,
             "ask_location": self.template_id.ask_location,
             "signer_ids": [
