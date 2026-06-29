@@ -10,7 +10,7 @@
     "installable": True,
     "author": "Dixmit,Odoo Community Association (OCA)",
     "website": "https://github.com/OCA/sign",
-    "depends": ["html_editor", "portal"],
+    "depends": ["html_editor", "portal", "hr"],
     "data": [
         "security/security.xml",
         "views/menu.xml",

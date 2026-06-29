@@ -650,7 +650,25 @@ class SignOcaRequestSigner(models.Model):
         can = canvas.Canvas(packet, pagesize=(box.getWidth(), box.getHeight()))
         if not item["value"]:
             return False
-        par = Paragraph(item["value"], style=self._getParagraphStyle())
+            
+        clean_val = item["value"]
+        if "<" in clean_val or "\n" in clean_val:
+            try:
+                from lxml.html.clean import Cleaner
+                clean_val = clean_val.replace('\n', '<br/>')
+                cleaner = Cleaner(
+                    allow_tags=['b', 'i', 'u', 'strong', 'em', 'br', 'p', 'div', 'font'],
+                    remove_unknown_tags=False,
+                    style=True,
+                    safe_attrs_only=True,
+                    safe_attrs={'color', 'size', 'face'}
+                )
+                clean_val = cleaner.clean_html(f"<div>{clean_val}</div>")
+                clean_val = clean_val.replace('<br>', '<br/>')
+            except Exception:
+                pass
+
+        par = Paragraph(clean_val, style=self._getParagraphStyle())
         par.wrap(
             item["width"] / 100 * float(box.getWidth()),
             item["height"] / 100 * float(box.getHeight()),

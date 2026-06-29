@@ -12,6 +12,8 @@
                     <field name="template_id" />
                     <field name="filename" placeholder="Template name" />
                     <field name="dms_directory_id" />
+                    <field name="is_employee_document" />
+                    <field name="employee_id" invisible="not is_employee_document" required="is_employee_document" />
                     <field name="message" />
                 </group>
                 <footer>

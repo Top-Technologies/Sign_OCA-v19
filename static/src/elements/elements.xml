@@ -12,17 +12,17 @@
         <div t-else="" />
     </t>
     <t t-name="sign_oca.sign_iframe_field_text">
-        <input
-            style="width:100%;height:100%"
-            type="text"
+        <div
+            style="width:100%;height:100%;overflow-y:auto;white-space:pre-wrap;word-break:break-word;"
+            contenteditable="true"
             t-att-tabindex="-1"
-            t-att-value="item.value? item.value: undefined"
             t-att-placeholder="item.placeholder || item.name"
             t-if="item.role == role"
+            t-out="item.markup_value ? item.markup_value : undefined"
         />
         <div
-            style="width:100%;height:100%"
-            t-out="item.value? item.value: undefined"
+            style="width:100%;height:100%;overflow-y:auto;white-space:pre-wrap;word-break:break-word;"
+            t-out="item.markup_value ? item.markup_value : undefined"
             t-else=""
         />
     </t>

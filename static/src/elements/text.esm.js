@@ -3,6 +3,7 @@
 
 import {registry} from "@web/core/registry";
 import {renderToString} from "@web/core/utils/render";
+import { markup } from "@odoo/owl";
 
 const textSignOca = {
     change: function (value, parent, item) {
@@ -10,14 +11,18 @@ const textSignOca = {
         parent.checkFilledAll();
     },
     generate: function (parent, item, signatureItem) {
+        var item_markup = { ...item };
+        if (item.value) {
+            item_markup.markup_value = markup(item.value);
+        }
         var input = $(
             renderToString("sign_oca.sign_iframe_field_text", {
-                item: item,
+                item: item_markup,
                 role_id: parent.info.role_id,
             })
         )[0];
         if (item.value) {
-            input.value = item.value;
+            input.innerHTML = item.value;
         }
         signatureItem[0].addEventListener("focus_signature", () => {
             input.focus();
@@ -34,11 +39,14 @@ const textSignOca = {
                     item,
                     signatureItem
                 );
-                ev.target.value = parent.info.partner[item.default_value];
+                ev.target.innerHTML = parent.info.partner[item.default_value];
             }
         });
-        input.addEventListener("change", (ev) => {
-            this.change(ev.srcElement.value, parent, item, signatureItem);
+        input.addEventListener("input", (ev) => {
+            this.change(ev.currentTarget.innerHTML, parent, item, signatureItem);
+        });
+        input.addEventListener("blur", (ev) => {
+            this.change(ev.currentTarget.innerHTML, parent, item, signatureItem);
         });
         input.addEventListener("keydown", (ev) => {
             if ((ev.keyCode || ev.which) !== 9) {

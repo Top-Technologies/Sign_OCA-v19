@@ -43,6 +43,34 @@ class SignOcaTemplateGenerate(models.TransientModel):
     sign_now = fields.Boolean()
     message = fields.Html()
     document_sequence = fields.Char(default=_default_document_sequence, string="Document Sequence")
+    is_employee_document = fields.Boolean(string="Is Employee Document?")
+    employee_id = fields.Many2one("hr.employee", string="Employee")
+
+    def _ensure_employee_dms_directory(self, employee):
+        dms_dir_model = self.env['dms.directory'].sudo()
+        hr_dir = dms_dir_model.search([('name', '=', 'HR'), ('is_root_directory', '=', True)], limit=1)
+        if not hr_dir:
+            hr_dir = dms_dir_model.search([('name', '=', 'HR')], limit=1)
+            if not hr_dir:
+                storage = self.env['dms.storage'].search([], limit=1)
+                hr_dir = dms_dir_model.create({
+                    'name': 'HR',
+                    'is_root_directory': True,
+                    'storage_id': storage.id,
+                })
+        emp_folder = dms_dir_model.search([('name', '=', 'Employee Folder'), ('parent_id', '=', hr_dir.id)], limit=1)
+        if not emp_folder:
+            emp_folder = dms_dir_model.create({
+                'name': 'Employee Folder',
+                'parent_id': hr_dir.id,
+            })
+        emp_dir = dms_dir_model.search([('name', '=', employee.name), ('parent_id', '=', emp_folder.id)], limit=1)
+        if not emp_dir:
+            emp_dir = dms_dir_model.create({
+                'name': employee.name,
+                'parent_id': emp_folder.id,
+            })
+        return emp_dir
 
     def _generate_vals(self):
         signatory_data = self.template_id._get_signatory_data()
@@ -54,11 +82,16 @@ class SignOcaTemplateGenerate(models.TransientModel):
                     item["value"] = self.document_sequence
                     # item["required"] = False # Do not change required status, it should just have a value.
 
+        dms_dir_id = self.dms_directory_id.id if self.dms_directory_id else self.template_id.dms_directory_id.id
+        if self.is_employee_document and self.employee_id:
+            emp_dir = self._ensure_employee_dms_directory(self.employee_id)
+            dms_dir_id = emp_dir.id
+
         return {
             "name": self.filename or self.template_id.name,
             "filename": self.filename or self.template_id.name,
             "template_id": self.template_id.id,
-            "dms_directory_id": self.dms_directory_id.id if self.dms_directory_id else self.template_id.dms_directory_id.id,
+            "dms_directory_id": dms_dir_id,
             "signatory_data": signatory_data,
             "data": self.template_id.data,
             "ask_location": self.template_id.ask_location,
